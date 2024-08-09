@@ -99,6 +99,50 @@ $app->post('/add-product', function ($request, $response, $args) use ($productsC
     return $response->withHeader('Location', '/')->withStatus(302);
 });
 
+use Psr\Http\Message\ServerRequestInterface as Request;
+use Psr\Http\Message\ResponseInterface as Response;
+
+$app->get('/delete/{productname}', function (Request $request, Response $response, array $args) use ($productsCollection) {
+    $productname = $args['productname'];
+
+    // Vérifier que la requête provient d'un espace local
+    if (!in_array($request->getServerParams()['REMOTE_ADDR'], ['127.0.0.1', '::1'])) {
+        $response->getBody()->write('Access forbidden');
+        return $response->withStatus(403);
+    }
+
+    // Trouver le produit dans la base de données
+    $product = $productsCollection->findOne(['name' => $productname]);
+
+    if ($product) {
+        // Supprimer l'image associée
+        $imagePath = 'path/to/images/' . $product['image'];
+        if (file_exists($imagePath)) {
+            unlink($imagePath);
+        }
+
+        // Supprimer le produit de la base de données
+        $productsCollection->deleteOne(['name' => $productname]);
+
+        $response->getBody()->write('Product deleted successfully');
+        return $response;
+    } else {
+        $response->getBody()->write('Product not found');
+        return $response->withStatus(404);
+    }
+});
+
+
+// Route pour afficher la page de confirmation de suppression
+$app->get('/delete-confirmation', function ($request, $response, $args) {
+    ob_start();
+    include 'delete_confirmation.php';
+    $output = ob_get_clean();
+    $response->getBody()->write($output);
+    return $response;
+});
+
+
 // Fonction pour télécharger une image depuis une URL et l'enregistrer sur le serveur
 function downloadImage($url, $saveDir, $filename) {
     $ch = curl_init($url);
