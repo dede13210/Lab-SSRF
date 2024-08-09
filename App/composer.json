@@ -1,0 +1,19 @@
+{
+    "name": "lab/ssrf",
+    "description": "Un projet Slim utilisant MongoDB",
+    "require": {
+        "php": "^7.4 || ^8.0",
+        "slim/slim": "^4.10",
+        "mongodb/mongodb": "^1.10",
+        "nyholm/psr7": "^1.8",
+        "slim/psr7": "^1.7"
+    },
+    "autoload": {
+        "psr-4": {
+            "App\\": "src/"
+        }
+    },
+    "scripts": {
+        "start": "php -S localhost:3000 -t public"
+    }
+}
