@@ -12,5 +12,17 @@ services:
       - ./init-mongo.js:/docker-entrypoint-initdb.d/init-mongo.js
       - mongo-data:/data/db
 
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    volumes:
+      - .:/app
+    environment:
+      - APP_ENV=production
+    command: ["php", "./public/index.php", "start"]
+
 volumes:
   mongo-data:
