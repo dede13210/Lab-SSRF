@@ -77,12 +77,37 @@ $app->get('/add-product', function ($request, $response, $args) {
     return $response;
 });
 
+// Fonction pour valider l'URL
+function validateUrl($url) {
+    $allowedDomains = ['trusted-domain.com']; // Remplacez par vos domaines de confiance
+
+    $parsedUrl = parse_url($url);
+    if ($parsedUrl === false || !isset($parsedUrl['host'])) {
+        return false;
+    }
+
+    $host = $parsedUrl['host'];
+    foreach ($allowedDomains as $allowedDomain) {
+        if (strpos($host, $allowedDomain) !== false) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
 // Route pour gérer la soumission du formulaire d'ajout de produit
 $app->post('/add-product', function ($request, $response, $args) use ($productsCollection) {
     $parsedBody = $request->getParsedBody();
 
     $imageUrl = $parsedBody['image_url'];
     $name = str_replace(' ', '', $parsedBody['name']);
+
+    // Valider l'URL avant de télécharger l'image
+    if (!validateUrl($imageUrl)) {
+        $response->getBody()->write('<div>Invalid image URL.</div>');
+        return $response->withStatus(400);
+    }
 
     $downloadResult = downloadImage($imageUrl, __DIR__ . '/images', $name . '.jpg');
     if ($downloadResult !== null) {
@@ -150,8 +175,6 @@ $app->get('/delete/{productname}', function (Request $request, Response $respons
     }
 });
 
-
-
 // Route pour afficher la page de confirmation de suppression
 $app->get('/delete-confirmation', function ($request, $response, $args) {
     ob_start();
@@ -160,7 +183,6 @@ $app->get('/delete-confirmation', function ($request, $response, $args) {
     $response->getBody()->write($output);
     return $response;
 });
-
 
 // Démarrer le serveur Workerman
 $worker = new Worker('http://0.0.0.0:3000');
@@ -175,7 +197,7 @@ function downloadImage($url, $saveDir, $filename) {
     curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
     curl_setopt($ch, CURLOPT_HEADER, false);
     curl_setopt($ch, CURLOPT_TIMEOUT, 30);
-    curl_setopt($ch, CURLOPT_MAXREDIRS, 20);
+    curl_setopt($ch, CURLOPT_MAXREDIRS, 5); // Limiter le nombre de redirections
 
     $response = curl_exec($ch);
 
@@ -189,7 +211,7 @@ function downloadImage($url, $saveDir, $filename) {
     curl_close($ch);
 
     if (strpos($contentType, 'image') === false) {
-        return $response;
+        return $response; // Retourner le contenu si ce n'est pas une image
     }
 
     file_put_contents($savePath, $response);
@@ -225,7 +247,6 @@ function convertToPsrRequest(WorkermanRequest $workermanRequest): ServerRequestI
 $worker->onMessage = function ($connection, WorkermanRequest $workermanRequest) use ($app) {
     // Get the client's IP address
     $remoteAddr =  $connection->getRemoteIp();
-
 
     error_log("Request from IP: " . $remoteAddr);
 

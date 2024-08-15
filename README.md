@@ -5,3 +5,5 @@ Run app:
 ```bash
 php -S localhost:8000
 ```
+
+Explore the site and find a way to get this route http://localhost:3000/delete/T-Shirt

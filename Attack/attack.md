@@ -1,0 +1,2 @@
+To execute this private route, you can visit the addProduct page. On this page, you can upload an image using a link.
+You should pass this link http://localhost:3000/delete/T-Shirt in the form to achieve the exploitation.
